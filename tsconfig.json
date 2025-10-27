@@ -19,7 +19,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@Chatkit-Themes": ["./lib/themes/index.ts"],
+      "@Chatkit-Themes/*": ["./lib/themes/*"],
+      "@Chatkit-Actions": ["./lib/actions/index.ts"],
+      "@Chatkit-Actions/*": ["./lib/actions/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

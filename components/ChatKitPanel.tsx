@@ -8,10 +8,11 @@ import {
   GREETING,
   CREATE_SESSION_ENDPOINT,
   WORKFLOW_ID,
-  getThemeConfig,
 } from "@/lib/config";
 import { ErrorOverlay } from "./ErrorOverlay";
 import type { ColorScheme } from "@/hooks/useColorScheme";
+import { crimsonDark, crimsonLight } from "@Chatkit-Themes";
+import { openYouTubeLink } from "@Chatkit-Actions";
 
 export type FactAction = {
   type: "save";
@@ -193,9 +194,8 @@ export function ChatKitPanel({
           body: JSON.stringify({
             workflow: { id: WORKFLOW_ID },
             chatkit_configuration: {
-              // enable attachments
               file_upload: {
-                enabled: true,
+                enabled: false,
               },
             },
           }),
@@ -265,7 +265,7 @@ export function ChatKitPanel({
     api: { getClientSecret },
     theme: {
       colorScheme: theme,
-      ...getThemeConfig(theme),
+      ...(theme === "dark" ? crimsonDark : crimsonLight),
     },
     startScreen: {
       greeting: GREETING,
@@ -274,17 +274,89 @@ export function ChatKitPanel({
     composer: {
       placeholder: PLACEHOLDER_INPUT,
       attachments: {
-        // Enable attachments
-        enabled: true,
+        enabled: false,
       },
     },
     threadItemActions: {
       feedback: false,
     },
+    widgets: {
+      async onAction(action, widgetItem) {
+        console.info("[ChatKitPanel] widgets.onAction called", { action, widgetItem });
+
+        if (action?.type !== "link.open") {
+          console.info("[ChatKitPanel] Unhandled action type", { type: action?.type });
+          return;
+        }
+
+        // 1) Read URL from documented fields
+        let url = (action as unknown as { uri?: unknown }).uri as string | undefined;
+        url = url || (action?.payload as { uri?: string; url?: string; href?: string } | undefined)?.uri;
+        url = url || (action?.payload as { url?: string } | undefined)?.url;
+        url = url || (action?.payload as { href?: string } | undefined)?.href;
+
+        // 2) Fallback: derive from the widget item definition if payload omitted
+        if (!url && widgetItem?.widget) {
+          const findUrl = (node: any): string | null => {
+            if (!node || typeof node !== "object") return null;
+            const a = node.onClickAction?.payload;
+            if (a && (typeof a.uri === "string" || typeof a.url === "string" || typeof a.href === "string")) {
+              return (a.uri || a.url || a.href) as string;
+            }
+            const kids = Array.isArray(node.children) ? node.children : [];
+            for (const child of kids) {
+              const found = findUrl(child);
+              if (found) return found;
+            }
+            return null;
+          };
+          const derived = findUrl(widgetItem.widget);
+          if (derived) {
+            console.info("[ChatKitPanel] Derived URL from widgetItem", { url: derived });
+            url = derived;
+          }
+        }
+
+        if (!url || typeof url !== "string") {
+          console.warn("[ChatKitPanel] link.open action → no URL present", { action, widgetItem });
+          return;
+        }
+
+        if (!(url.startsWith("https://www.youtube.com/") || url.startsWith("https://youtu.be/"))) {
+          console.warn("[ChatKitPanel] Non-YouTube URL blocked", { url });
+          return;
+        }
+
+        const ok = openYouTubeLink({ href: url, target: "_blank" });
+        if (!ok) {
+          console.warn("[ChatKitPanel] Failed to open YouTube URL", { url });
+        }
+      },
+    },
     onClientTool: async (invocation: {
       name: string;
       params: Record<string, unknown>;
     }) => {
+      if (invocation.name === "open_url" || invocation.name === "link.open") {
+        const params = invocation.params as
+          | { href?: unknown; url?: unknown; target?: unknown; payload?: { href?: unknown; url?: unknown; target?: unknown } }
+          | Record<string, unknown>;
+        const href = String(
+          (params as { href?: unknown }).href ??
+            (params as { url?: unknown }).url ??
+            (params as { payload?: { href?: unknown } }).payload?.href ??
+            (params as { payload?: { url?: unknown } }).payload?.url ??
+            ""
+        );
+        const target = String(
+          (params as { target?: unknown }).target ??
+            (params as { payload?: { target?: unknown } }).payload?.target ??
+            "_blank"
+        );
+        console.info("[ChatKitPanel] onClientTool", { name: invocation.name, href, target });
+        const ok = openYouTubeLink({ href, target });
+        return { success: ok };
+      }
       if (invocation.name === "switch_theme") {
         const requested = invocation.params.theme;
         if (requested === "light" || requested === "dark") {
@@ -319,6 +391,11 @@ export function ChatKitPanel({
     },
     onResponseStart: () => {
       setErrorState({ integration: null, retryable: false });
+    },
+    onLog: ({ name, data }: { name: string; data?: Record<string, unknown> }) => {
+      if (isDev) {
+        console.debug("[ChatKitPanel] log", { name, data });
+      }
     },
     onThreadChange: () => {
       processedFacts.current.clear();

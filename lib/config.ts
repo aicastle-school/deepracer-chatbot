@@ -7,15 +7,30 @@ export const CREATE_SESSION_ENDPOINT = "/api/create-session";
 
 export const STARTER_PROMPTS: StartScreenPrompt[] = [
   {
-    label: "What can you do?",
-    prompt: "What can you do?",
+    label: "How should I answer a family member who says socialism is compassionate?",
+    prompt: "How should I answer a family member who says socialism is compassionate?",
+    icon: "circle-question",
+  },
+  {
+    label: "Show me the video when Charlie debated a student on abortion.",
+    prompt: "Show me the video when Charlie debated a student on abortion.",
+    icon: "circle-question",
+  },
+  {
+    label: "How can I debate with a friend who says Trump is Hitler?",
+    prompt: "How can I debate with a friend who says Trump is Hitler?",
+    icon: "circle-question",
+  },
+  {
+    label: "What would Charlie say to people who think America’s best days are over?",
+    prompt: "What would Charlie say to people who think America’s best days are over?",
     icon: "circle-question",
   },
 ];
 
 export const PLACEHOLDER_INPUT = "Ask anything...";
 
-export const GREETING = "How can I help you today?";
+export const GREETING = "What would Charlie say?";
 
 export const getThemeConfig = (theme: ColorScheme): ThemeOption => ({
   color: {
@@ -30,6 +45,4 @@ export const getThemeConfig = (theme: ColorScheme): ThemeOption => ({
     },
   },
   radius: "round",
-  // Add other theme options here
-  // chatkit.studio/playground to explore config options
 });
