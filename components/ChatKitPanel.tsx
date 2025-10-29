@@ -61,6 +61,20 @@ export function ChatKitPanel({
       : "pending"
   );
   const [widgetInstanceKey, setWidgetInstanceKey] = useState(0);
+  
+  // Get user first name from URL for personalized greeting
+  const getUserFirstName = () => {
+    if (typeof window === "undefined") return "";
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('user_first_name') || "";
+  };
+
+    // Get question name from URL for personalized greeting
+    const getQuestionName = () => {
+      if (typeof window === "undefined") return "";
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('question_name') || "";
+    };
 
   const setErrorState = useCallback((updates: Partial<ErrorState>) => {
     setErrors((current) => ({ ...current, ...updates }));
@@ -185,17 +199,28 @@ export function ChatKitPanel({
       }
 
       try {
-        const response = await fetch(CREATE_SESSION_ENDPOINT, {
+        // Build URL with parameters from browser URL
+        const url = new URL(CREATE_SESSION_ENDPOINT, window.location.origin);
+        const urlParams = new URLSearchParams(window.location.search);
+        url.searchParams.set('user_first_name', urlParams.get('user_first_name') || '');
+        url.searchParams.set('user_last_name', urlParams.get('user_last_name') || '');
+        url.searchParams.set('form_template_uid', urlParams.get('form_template_uid') || '');
+        url.searchParams.set('user_id', urlParams.get('user_id') || '');
+        url.searchParams.set('question_template_id', urlParams.get('question_template_id') || '');
+        url.searchParams.set('version', urlParams.get('version') || '');
+        
+        const response = await fetch(url.toString(), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             workflow: { id: WORKFLOW_ID },
+            question_template_id: urlParams.get('question_template_id') || '',
             chatkit_configuration: {
               // enable attachments
               file_upload: {
-                enabled: true,
+                enabled: false,
               },
             },
           }),
@@ -268,14 +293,14 @@ export function ChatKitPanel({
       ...getThemeConfig(theme),
     },
     startScreen: {
-      greeting: GREETING,
+      greeting: getQuestionName() ? getQuestionName() : getUserFirstName() ? `Hi ${getUserFirstName()}, how can I help you today?` : GREETING,
       prompts: STARTER_PROMPTS,
     },
     composer: {
       placeholder: PLACEHOLDER_INPUT,
       attachments: {
         // Enable attachments
-        enabled: true,
+        enabled: false,
       },
     },
     threadItemActions: {
@@ -344,7 +369,7 @@ export function ChatKitPanel({
   }
 
   return (
-    <div className="relative pb-8 flex h-[90vh] w-full rounded-2xl flex-col overflow-hidden bg-white shadow-sm transition-colors dark:bg-slate-900">
+    <div className="relative flex h-screen w-full flex-col overflow-hidden bg-white">
       <ChatKit
         key={widgetInstanceKey}
         control={chatkit.control}

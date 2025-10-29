@@ -6,6 +6,7 @@ interface CreateSessionRequestBody {
   workflow?: { id?: string | null } | null;
   scope?: { user_id?: string | null } | null;
   workflowId?: string | null;
+  question_template_id?: string | null;
   chatkit_configuration?: {
     file_upload?: {
       enabled?: boolean;
@@ -36,10 +37,27 @@ export async function POST(request: Request): Promise<Response> {
       );
     }
 
+    // Extract URL parameters
+    const requestUrl = new URL(request.url);
+    const userFirstName = requestUrl.searchParams.get('user_first_name');
+    const userLastName = requestUrl.searchParams.get('user_last_name');
+    const formTemplateUid = requestUrl.searchParams.get('form_template_uid');
+    const urlUserId = requestUrl.searchParams.get('user_id');
+    const urlQuestionTemplateId = requestUrl.searchParams.get('question_template_id');
+    const version = requestUrl.searchParams.get('version');
+
     const parsedBody = await safeParseJson<CreateSessionRequestBody>(request);
     const { userId, sessionCookie: resolvedSessionCookie } =
       await resolveUserId(request);
     sessionCookie = resolvedSessionCookie;
+    
+    // Get question_template_id from request body (prioritized) or URL parameter
+    const questionTemplateId = parsedBody?.question_template_id || urlQuestionTemplateId;
+    
+    // Construct user parameter from form_template_uid and user_id with _x_ separator
+    const constructedUserId = urlUserId && questionTemplateId
+    ? `${urlUserId}_x_${questionTemplateId}`
+    : urlUserId || userId;
     const resolvedWorkflowId =
       parsedBody?.workflow?.id ?? parsedBody?.workflowId ?? WORKFLOW_ID;
 
@@ -47,6 +65,8 @@ export async function POST(request: Request): Promise<Response> {
       console.info("[create-session] handling request", {
         resolvedWorkflowId,
         body: JSON.stringify(parsedBody),
+        urlQuestionTemplateId,
+        questionTemplateId,
       });
     }
 
@@ -69,8 +89,17 @@ export async function POST(request: Request): Promise<Response> {
         "OpenAI-Beta": "chatkit_beta=v1",
       },
       body: JSON.stringify({
-        workflow: { id: resolvedWorkflowId },
-        user: userId,
+        workflow: { 
+          id: resolvedWorkflowId,
+          version: version || "",
+          state_variables: {
+            question_template_uid: questionTemplateId || "",
+            form_template_uid: formTemplateUid || "",
+            user_first_name: userFirstName || "",
+            user_last_name: userLastName || ""
+          }
+        },
+        user: constructedUserId,
         chatkit_configuration: {
           file_upload: {
             enabled:
