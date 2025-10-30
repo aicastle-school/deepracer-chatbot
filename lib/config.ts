@@ -20,7 +20,7 @@ export const STARTER_PROMPTS: StartScreenPrompt[] = [
 
 export const PLACEHOLDER_INPUT = "딥레이서와 관련된 내용을 물어보세요";
 
-export const GREETING = "안녕하세요. 에이아이캐슬에서 만든 딥레이서 챗봇입니다.";
+export const GREETING = "에이아이캐슬에서 만든 딥레이서 챗봇입니다.";
 
 export const getThemeConfig = (theme: ColorScheme): ThemeOption => ({
   color: {
