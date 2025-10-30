@@ -7,15 +7,20 @@ export const CREATE_SESSION_ENDPOINT = "/api/create-session";
 
 export const STARTER_PROMPTS: StartScreenPrompt[] = [
   {
-    label: "What can you do?",
-    prompt: "What can you do?",
+    label: "딥레이서 보상함수 파라미터",
+    prompt: "딥레이서 보상함수 (Reward Function)의 입력 파라미터 (params)에는 어떤 것들이 있는지 설명해주세요.",
+    icon: "circle-question",
+  },
+  {
+    label: "딥레이서 실제 차량의 LED 색깔",
+    prompt: "딥레이서 실제 차량의 LED 색깔이 의미하는 것은 무엇인가요?",
     icon: "circle-question",
   },
 ];
 
-export const PLACEHOLDER_INPUT = "Ask anything...";
+export const PLACEHOLDER_INPUT = "딥레이서와 관련된 내용을 물어보세요";
 
-export const GREETING = "How can I help you today?";
+export const GREETING = "안녕하세요. 에이아이캐슬에서 만든 딥레이서 챗봇입니다.";
 
 export const getThemeConfig = (theme: ColorScheme): ThemeOption => ({
   color: {
