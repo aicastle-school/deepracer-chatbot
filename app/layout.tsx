@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AgentKit demo",
-  description: "Demo of ChatKit with hosted workflow",
+  title: "딥레이서 챗봇 | AICASTLE",
+  description: "에이아이캐슬에서 만든 딥레이서 챗봇입니다.",
 };
 
 export default function RootLayout({
